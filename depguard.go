@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -71,19 +72,35 @@ func (s linterSettings) run(pass *analysis.Pass) (interface{}, error) {
 		fileName := filepath.ToSlash(pass.Fset.Position(file.Pos()).Filename)
 		lists := s.whichLists(fileName)
 		for _, imp := range file.Imports {
+			var deniedName string
+			var deniedSuggestion string
+
+			var states []allowedState
 			for _, l := range lists {
-				if allowed, sugg := l.importAllowed(rawBasicLit(imp.Path)); !allowed {
-					diag := analysis.Diagnostic{
-						Pos:     imp.Pos(),
-						End:     imp.End(),
-						Message: fmt.Sprintf("import '%s' is not allowed from list '%s'", rawBasicLit(imp.Path), l.name),
-					}
-					if sugg != "" {
-						diag.Message = fmt.Sprintf("%s: %s", diag.Message, sugg)
-						diag.SuggestedFixes = append(diag.SuggestedFixes, analysis.SuggestedFix{Message: sugg})
-					}
-					pass.Report(diag)
+				allowedInList, suggestion := l.importAllowed(rawBasicLit(imp.Path))
+				if allowedInList == explicitlyDenied {
+					deniedName = l.name
+					deniedSuggestion = suggestion
 				}
+
+				states = append(states, allowedInList)
+			}
+
+			if slices.Contains(states, explicitlyAllowed) {
+				continue
+			}
+
+			if slices.Contains(states, explicitlyDenied) {
+				diag := analysis.Diagnostic{
+					Pos:     imp.Pos(),
+					End:     imp.End(),
+					Message: fmt.Sprintf("import '%s' is not allowed from list '%s'", rawBasicLit(imp.Path), deniedName),
+				}
+				if deniedSuggestion != "" {
+					diag.Message = fmt.Sprintf("%s: %s", diag.Message, deniedSuggestion)
+					diag.SuggestedFixes = append(diag.SuggestedFixes, analysis.SuggestedFix{Message: deniedSuggestion})
+				}
+				pass.Report(diag)
 			}
 		}
 	}

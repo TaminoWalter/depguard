@@ -136,27 +136,41 @@ func (l *list) fileMatch(fileName string) bool {
 	return inAllowed && !inDenied
 }
 
-func (l *list) importAllowed(imp string) (bool, string) {
+func (l *list) importAllowed(imp string) (allowedState, string) {
 	inAllowed, aIdx := strInPrefixList(imp, l.allow)
 	inDenied, dIdx := strInPrefixList(imp, l.deny)
-	var allowed bool
+	var allowed allowedState
 	switch l.listMode {
 	case listModeOriginal:
 		inAllowed = len(l.allow) == 0 || inAllowed
-		allowed = inAllowed && !inDenied
+		// allowed = inAllowed && !inDenied
 	case listModeStrict:
-		allowed = inAllowed && (!inDenied || len(l.allow[aIdx]) > len(l.deny[dIdx]))
+		// allowed = inAllowed && (!inDenied || len(l.allow[aIdx]) > len(l.deny[dIdx]))
 	case listModeLax:
-		allowed = !inDenied || (inAllowed && len(l.allow[aIdx]) > len(l.deny[dIdx]))
+		if !inDenied && inAllowed && len(l.allow[aIdx]) > len(l.deny[dIdx]) {
+			allowed = explicitlyAllowed
+		} else if inDenied {
+			allowed = explicitlyDenied
+		} else {
+			allowed = implicitlyAllowed
+		}
 	default:
-		allowed = false
+		allowed = explicitlyDenied
 	}
 	sugg := ""
-	if !allowed && inDenied && dIdx != -1 {
+	if allowed == explicitlyDenied && inDenied && dIdx != -1 {
 		sugg = l.suggestions[dIdx]
 	}
 	return allowed, sugg
 }
+
+type allowedState int
+
+const (
+	explicitlyDenied allowedState = iota
+	implicitlyAllowed
+	explicitlyAllowed
+)
 
 type LinterSettings map[string]*List
 
