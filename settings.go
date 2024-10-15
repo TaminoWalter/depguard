@@ -137,7 +137,7 @@ func (l *list) fileMatch(fileName string) bool {
 }
 
 func (l *list) importAllowed(imp string) (allowedState, string) {
-	inAllowed, aIdx := strInPrefixList(imp, l.allow)
+	inAllowed, _ := strInPrefixList(imp, l.allow)
 	inDenied, dIdx := strInPrefixList(imp, l.deny)
 	var allowed allowedState
 	switch l.listMode {
@@ -147,7 +147,7 @@ func (l *list) importAllowed(imp string) (allowedState, string) {
 	case listModeStrict:
 		// allowed = inAllowed && (!inDenied || len(l.allow[aIdx]) > len(l.deny[dIdx]))
 	case listModeLax:
-		if !inDenied && inAllowed && len(l.allow[aIdx]) > len(l.deny[dIdx]) {
+		if !inDenied && inAllowed {
 			allowed = explicitlyAllowed
 		} else if inDenied {
 			allowed = explicitlyDenied
