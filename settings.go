@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/OpenPeeDeeP/depguard/v2/internal/utils"
+	"github.com/TaminoWalter/depguard/internal/utils"
 	"github.com/gobwas/glob"
 )
 

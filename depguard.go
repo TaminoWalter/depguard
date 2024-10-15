@@ -60,7 +60,7 @@ func newAnalyzer(run func(*analysis.Pass) (interface{}, error)) *analysis.Analyz
 	return &analysis.Analyzer{
 		Name:             "depguard",
 		Doc:              "Go linter that checks if package imports are in a list of acceptable packages",
-		URL:              "https://github.com/OpenPeeDeeP/depguard",
+		URL:              "https://github.com/TaminoWalter/depguard",
 		Run:              run,
 		RunDespiteErrors: false,
 	}

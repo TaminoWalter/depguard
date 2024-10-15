@@ -1,4 +1,4 @@
-module github.com/OpenPeeDeeP/depguard/v2
+module github.com/TaminoWalter/depguard
 
 go 1.20
 
